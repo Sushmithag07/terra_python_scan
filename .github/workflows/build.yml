@@ -1,0 +1,24 @@
+on: push
+name: SonarQube Workflow
+jobs:
+ sonarqube:
+  runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@main
+    with:
+     fetch-depth: 0
+   # Setup java 17 to be default (sonar-scanner requirement as of 5.x)
+  - uses: actions/setup-java@v3
+    with:
+      distribution: 'temurin' # See 'Supported distributions' for available options
+      java-version: '17'
+    # Setup sonar-scanner
+  - name: Setup SonarQube
+    uses: warchant/setup-sonar-scanner@v7
+    # Run sonar-scanner
+  - name: SonarQube Scan
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Neeeded to get PR information, if any
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    run: sonar-scanner -Dsonar.projectKey=devscan1 -Dsonar.sources=. -Dsonar.host.url=http://dev-aurora-sonarqube-alb-356632589.us-west-2.elb.amazonaws.com -Dsonar.token=sqp_049165bd96ea10cc9a4c37e6176bc4b5fe6c7e2f

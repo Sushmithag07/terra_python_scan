@@ -1,0 +1,4 @@
+key = "projects/prod/pendulum-multi-lambda-template.tfstate"
+bucket = "pendulum-prod-terraform-state"
+region = "us-west-2"
+dynamodb_table = "pendulum-terraform-state-lock"

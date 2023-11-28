@@ -1,0 +1,77 @@
+name: "Dev Multi-Lambda Workflow"
+on:
+  push:
+    branches:
+      - dev
+permissions:
+  id-token: write
+  contents: read
+env:
+  TF_VARS_CONF_FILE : "conf/vars/dev/conf-dev-us-west-2.tfvars"
+  TF_BACKEND_CONF_FILE : "conf/backend/dev.s3.tfbackend"
+  TF_DEPLOY_WORKSPACE : "dev"
+jobs:
+  terraform:
+    name: "Pendulum Multi-Lambda - Dev"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-west-2
+          role-to-assume: arn:aws:iam::545704012723:role/github-workflow-aws-integration-role
+          role-duration-seconds: 1200
+                    
+      - name: Build the base docker image for linux/arm64 platforms
+        run: make build-docker-x-platform
+
+      - name: Lint source code
+        run: make lint
+      
+      - name: Check the format of the source code
+        run: make fmt
+
+      - name: Unit Test Lambdas
+        run: make test
+
+      - name: Grant access permission to project folder
+        run: sudo chown -R $USER:$USER $(pwd)
+
+      - name: Package Lambdas
+        shell: bash
+        run: make build-lambdas
+
+      - name: Terraform fmt
+        id: fmt
+        working-directory: ./infra
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        id: init
+        working-directory: ./infra
+        run: terraform init -upgrade -backend-config="$TF_BACKEND_CONF_FILE"
+
+      - name: Terraform Set Workspace
+        id: workspace
+        working-directory: ./infra
+        run: terraform workspace select $TF_DEPLOY_WORKSPACE || terraform workspace new $TF_DEPLOY_WORKSPACE
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: ./infra
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ./infra
+        run: terraform plan -var-file="$TF_VARS_CONF_FILE" -out="${{github.ref_name}}-${{github.run_number}}.plan"
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: ./infra
+        run: terraform apply "${{github.ref_name}}-${{github.run_number}}.plan"
