@@ -15,7 +15,7 @@ jobs:
     name: "Multi-Lambda Workflow - Validation"
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.5
