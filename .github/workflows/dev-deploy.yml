@@ -21,7 +21,7 @@ jobs:
           terraform_version: 1.5.5
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-west-2
           role-to-assume: arn:aws:iam::545704012723:role/github-workflow-aws-integration-role
